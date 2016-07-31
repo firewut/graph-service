@@ -1,11 +1,40 @@
 import datetime
-import pdb
-
-from flask import Flask, jsonify, request, render_template
-from pydeform import Client
+import os  
+import pytz
+import logging
+import random
+import re
+import string
+import tempfile
 
 from functions import *
-from settings import *
+from raven.contrib.flask import Sentry
+from flask import Flask, jsonify, request, render_template, send_from_directory
+from pydeform import Client
+import schemas
+import settings
+
+import requests.packages.urllib3
+
+requests.packages.urllib3.disable_warnings()
+
+host = os.getenv('IP', '0.0.0.0')  
+port = int(os.getenv('PORT', 8080))
+
+valRegex = r'^([0-9]+([,.][0-9]+)?)'
+
+
+EXAMPLE_GRAPH_ID='CUxHCtsjezgWDNIIuDbmDJHqosjxuQRqbokygpHG'
+START_TIME = datetime.datetime.utcnow()
+DATES=[
+    START_TIME.strftime("%Y-%m-%dT%H:%M:%S.")+START_TIME.strftime("%f")[0:3]+"+00",
+]
+
+for i in xrange(5):
+    new_date = START_TIME + datetime.timedelta(seconds=1*(i+1))
+    DATES.append(
+        new_date.strftime("%Y-%m-%dT%H:%M:%S.")+new_date.strftime("%f")[0:3]+"+03",
+    )
 
 app = Flask(__name__)
 
@@ -13,29 +42,33 @@ app = Flask(__name__)
 client = Client(host="deform.io")
 token_client = client.auth(
     'token',
-    auth_key=DEFORM_TOKEN,
-    project_id=DEFORM_PROJECT_ID,
+    auth_key=settings.DEFORM_TOKEN,
+    project_id=settings.DEFORM_PROJECT_ID,
 )
+collections = [
+    schemas.graph_schema
+]
+
+for collection in collections:
+    try:
+        token_client.collection.save(data=collection)
+    except Exception as e:
+        print(str(e))
 
 
-# # Graph Shema Sync
-# token_client.collection.save(
-#     data={
-#         "_id": GRAPH_COLLECTION_ID,
-#         "name": 'Graph',
-#         "schema": GRAPH_COLLECTION_SCHEMA
-#     }
-# )
+app.config['token_client'] = token_client
 
-@app.route("/")
-def index_page():
-    return render_template('index.html')
+@app.route("/", methods=["GET"])
+def index():
+    return render_template(
+        'index.html', 
+        DATES=DATES,
+        VIRTUAL_HOST=os.getenv('VIRTUAL_HOST', "%s:%d" % (host, port)),
+        EXAMPLE_GRAPH_DOC_ID=os.getenv('EXAMPLE_GRAPH_DOC_ID', EXAMPLE_GRAPH_ID)
+    )
 
 @app.route("/graph/", methods=["POST"])
-def create_graph():
-    """
-       Create a graph for a customer
-    """
+def graph_create():
     request_data, error = parseHTTPRequest(request, ["name", "units"])
     if error:
         response = jsonify({
@@ -46,8 +79,9 @@ def create_graph():
     try:
         # Deform save a graph
         deform_response = token_client.document.create(
-            collection=GRAPH_COLLECTION_ID,
+            collection=schemas.GRAPH_COLLECTION_ID,
             data={
+                "_id": ''.join(random.choice(string.ascii_letters) for x in range(40)),
                 "name": request_data["name"],
                 "units": request_data["units"]
             },
@@ -64,10 +98,32 @@ def create_graph():
         })
         return response, 422
 
-   
 
-@app.route("/graph/<graph_id>/", methods=["POST"])
-def push_point_to_graph(graph_id):
+@app.route("/graph/<graph_id>/", methods=["GET"])
+def graph_get(graph_id):
+    response = token_client.document.get(
+        collection=schemas.GRAPH_COLLECTION_ID,
+        identity=graph_id,
+    )
+
+    return render_template(
+        'graph.html', 
+        graph=response, 
+    )
+
+@app.route("/graph/<graph_id>.json/", methods=["GET"])
+def graph_get_chart(graph_id):
+    try:
+        response = token_client.document.get(
+            collection=schemas.GRAPH_COLLECTION_ID,
+            identity=graph_id,
+        )
+        return jsonify(response)
+    except:
+     return page_not_found(None)
+
+@app.route("/graph/<graph_id>/", methods=["POST", "PUT"])
+def graph_push_point(graph_id):
     """
         Push points to graph
     """
@@ -88,19 +144,19 @@ def push_point_to_graph(graph_id):
             }
         }
         if "date" in request_data:
-            operation.update({
+            operation["$push"]["points"].update({
                 "date": request_data["date"]
             })
 
         deform_response = token_client.documents.update(
-            collection=GRAPH_COLLECTION_ID,
+            collection=schemas.GRAPH_COLLECTION_ID,
             filter={
                 "_id": graph_id
             },
             operation=operation
         )
         response = jsonify({
-            "point": deform_response
+            "point": operation["$push"]["points"]
         })
         return response, 201
     except Exception as e:
@@ -108,23 +164,27 @@ def push_point_to_graph(graph_id):
             "error": str(e)
         })
         return response, 422
-        
 
-@app.route("/graph/<graph_id>/", methods=["GET"])
-def get_graph(graph_id):
-    """
-        Get a graph by Identifier
-    """
-    graph = token_client.document.get(
-        collection=GRAPH_COLLECTION_ID,
-        identity=graph_id,
-    )
-    return render_template('chart.html', graph=graph)
 
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def page_not_found(e):
+    return render_template('500.html'), 500
 
 if __name__ == "__main__":
-    app.run(
-        debug=True,
-        host="0.0.0.0",
-        port=8888
+    sentry = Sentry(app, dsn=os.getenv("SENTRY_DSN"))  
+    sentry_errors_log = logging.getLogger("sentry.errors")
+    sentry_errors_log.addHandler(logging.StreamHandler())
+
+    app.run(  
+        host=host,
+        port=port,
+        debug=os.getenv("MODE")!="prod"
     )

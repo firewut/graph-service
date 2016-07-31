@@ -1,0 +1,68 @@
+<div id="example-container" style="height: 400px; min-width: 310px"></div>
+<script>
+    var data = [
+              
+        [
+            Date.parse("2016-07-16T23:07:44.522138"),
+            20,
+        ],        
+        [
+            Date.parse("2016-07-16T23:07:45.532290"),
+            22,
+        ],        
+        [
+            Date.parse("2016-07-16T23:07:46.548646"),
+            23,
+        ],        
+        [
+            Date.parse("2016-07-16T23:07:47.528218"),
+            23,
+        ]     
+    ]
+    var start = +new Date();
+    Highcharts.setOptions({
+        global : {
+            useUTC : true
+        }
+    });
+
+    var chart = new Highcharts.Chart({
+        chart: {
+            renderTo: 'example-container',
+            events: {
+                load: function () {
+                    if (!window.isComparing) {
+                        this.setTitle(null, {
+                            text: 'Built chart in ' + (new Date() - start) + 'ms'
+                        });
+                    }
+                }
+            },
+            zoomType: "x",
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            title: {
+                text: 'ms'
+            }
+        },
+        legend: {
+            enabled: false,
+        },
+        title: {
+            text:''
+        },
+        tooltip: {
+            shared: true,
+            crosshairs: true
+        },
+        series : [{
+            data : data,
+            dataGrouping: {
+                    enabled: false
+                }
+        }]
+    })
+</script>

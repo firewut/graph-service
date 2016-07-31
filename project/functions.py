@@ -3,7 +3,7 @@ import dateutil
 from dateutil.parser import *
 from dateutil.tz import *
 
-from settings import *
+import settings
 
 
 def parseDate(string_date):
@@ -22,9 +22,8 @@ def parseHTTPRequest(request, keys):
         "date": datetime.datetime.utcnow()
     }
 
-
     proceed = False
-    for content_type in AVAILABLE_CONTENT_TYPES:
+    for content_type in settings.AVAILABLE_CONTENT_TYPES:
         if content_type in request.headers.get("Content-Type"):
             proceed = True
     
@@ -44,6 +43,22 @@ def parseHTTPRequest(request, keys):
         else:
             if "units" in keys:
                 return None, "units required"
+        
+        if "date" in json_request:
+            # Step 1 - parse a datetime
+            parsed_date = parseDate(json_request["date"])
+            # Step 2 - convert to UTC
+            data["date"] = convertToUTC(parsed_date)
+        else:
+            if "date" in keys:
+                return None, "date required"
+
+        if "unixtimestamp" in json_request:
+            date = datetime.datetime.fromtimestamp(json_request['unixtimestamp'])
+            data["date"] = date
+        else:
+            if "unixtimestamp" in keys:
+                return None, "unixtimestamp required"
         
         if "value" in json_request:
             data["value"] = json_request["value"]
@@ -72,6 +87,13 @@ def parseHTTPRequest(request, keys):
         else:
             if "date" in keys:
                 return None, "date required"
+
+        if "unixtimestamp" in request.form:
+            date = datetime.datetime.fromtimestamp(request.form['unixtimestamp'])
+            data["date"] = date
+        else:
+            if "unixtimestamp" in keys:
+                return None, "unixtimestamp required"            
         
         if "value" in request.form:
             data["value"] = float(request.form["value"])

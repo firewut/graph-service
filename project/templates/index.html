@@ -1,15 +1,32 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
+{% block title %}Simple Graph Service{% endblock %}
 {% block content %}
 
+    <!-- Logo & Menu -->
+    <h1 class="ui center aligned icon header" style="margin-top:1em">
+        <i class="area chart circular inverted red icon"></i>
+        <div class="content">
+            Graph service
+            <div class="sub header">
+                Store and retrieve your graphs
+            </div>
+        </div>
+    </h1>
 
-<h1 class="ui header">
-    Graph service example
-</h1>
 
+    <div class="ui top attached tabular menu">
+        <a class="item active" data-tab="whatsthis">What's this?</a>
+        <a class="item" data-tab="new">New Graph</a>
+        <a class="item" data-tab="examples">Examples</a>
+    </div>
+    <div class="ui bottom attached tab segment active" data-tab="whatsthis">
+        {% include 'whatsthis-tab.html' %}
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="new">
+        {% include 'new-tab.html' %}
+    </div>
+    <div class="ui bottom attached tab segment" data-tab="examples">
+        {% include 'examples-tab.html' %}
 
-<div class="ui bulleted list">
-  <div class="item">curl -H "Content-Type: application/json" -d '{"value":7, "date":"2010-01-01T00:00:00+03"}' http://127.0.0.1:8888/graph/5790d8166ff1dd0006223d75/</div>
-</div>
-
+    </div>
 {% endblock %}

@@ -1,0 +1,10 @@
+<h3 class="ui header">Store your graph as easy as</h3>
+<pre><code class="language-bash">curl -H "Content-Type: application/json" -d '{
+    "name": "pings",
+    "units": "ms"
+}' https://{{ VIRTUAL_HOST }}/graph/
+
+curl -d name=pings -d unit=ms https://{{ VIRTUAL_HOST }}/graph/
+</code></pre>
+
+{% include 'example-graph.html' %}

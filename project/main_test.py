@@ -8,10 +8,14 @@ import nose
 import unittest
 
 from flask import Flask
-from nose.tools import * # assert_equals, assert_greater, assert_in
+from nose.tools import * # assert_equal, assert_greater, assert_in, set_trace
+
+import schemas
 
 
 class FlaskTestClientProxy(unittest.TestCase):
+    graph_key_to_remove = None
+
     def setUp(self):
         self.app = app
         self.local_http_client = self.app.test_client()
@@ -26,12 +30,12 @@ class FlaskTestClientProxy(unittest.TestCase):
             data=json.dumps(data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         assert_greater(len(r_view.data), 0)
         
         json_response = json.loads(r_view.data)
         assert_in("graph-key", json_response)
-        assert_equal(len(json_response["graph-key"]), 24)
+        assert_equal(len(json_response["graph-key"]), 40)
 
         graph_key = json_response["graph-key"]
 
@@ -42,7 +46,6 @@ class FlaskTestClientProxy(unittest.TestCase):
                 float(random_ping)
             )
 
-        print(graph_key)
         for ping in random_pings:
             points_data = {
                 "value": ping,
@@ -51,28 +54,28 @@ class FlaskTestClientProxy(unittest.TestCase):
                 data=json.dumps(points_data),
                 content_type='application/json'
             )
-            assert_equals(r_view.status_code, 201)
+            
+            assert_equal(r_view.status_code, 201)
             json_response = json.loads(r_view.data)
             assert_in("point", json_response)
             assert_in("value", json_response["point"])
-            assert_in(ping, json_response["point"]["value"])
-
+            assert_equal(ping, json_response["point"]["value"])
     
     #####
     def test_graph_creation_invalid_content_type(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_creation_invalid_content_type",
             "units": "ms"
         }
         r_view = self.local_http_client.post('/graph/',
             data=json.dumps(data),
             content_type='invalid/content-type'
         )
-        assert_equals(r_view.status_code, 422)
+        assert_equal(r_view.status_code, 422)
         assert_greater(len(r_view.data), 0)
         json_response = json.loads(r_view.data)
         assert_in("error", json_response)
-        assert_equals(json_response["error"], '`application/json` or `x-www-form-urlencoded` are supported')
+        assert_equal(json_response["error"], '`application/json` or `x-www-form-urlencoded` are supported')
 
 
     """
@@ -80,33 +83,36 @@ class FlaskTestClientProxy(unittest.TestCase):
     """
     def test_graph_creation_json(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_creation_json",
             "units": "ms"
         }
         r_view = self.local_http_client.post('/graph/',
             data=json.dumps(data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         assert_greater(len(r_view.data), 0)
         
         json_response = json.loads(r_view.data)
         assert_in("graph-key", json_response)
-        assert_equal(len(json_response["graph-key"]), 24)
+        assert_equal(len(json_response["graph-key"]), 40)
+        graph_key = json_response["graph-key"]
+
+        self.graph_key_to_remove = graph_key
 
     def test_graph_creation_incorrect_data_units_json(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_creation_incorrect_data_units_json",
         }
         r_view = self.local_http_client.post('/graph/',
             data=json.dumps(data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 422)
+        assert_equal(r_view.status_code, 422)
         assert_greater(len(r_view.data), 0)
         json_response = json.loads(r_view.data)
         assert_in("error", json_response)
-        assert_equals(json_response["error"], 'units required')
+        assert_equal(json_response["error"], 'units required')
 
     def test_graph_creation_incorrect_data_name_json(self):
         data = {
@@ -116,27 +122,27 @@ class FlaskTestClientProxy(unittest.TestCase):
             data=json.dumps(data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 422)
+        assert_equal(r_view.status_code, 422)
         assert_greater(len(r_view.data), 0)
         json_response = json.loads(r_view.data)
         assert_in("error", json_response)
-        assert_equals(json_response["error"], 'name required')
+        assert_equal(json_response["error"], 'name required')
     
     def test_graph_point_push(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_point_push",
             "units": "ms"
         }
         r_view = self.local_http_client.post('/graph/',
             data=json.dumps(data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         assert_greater(len(r_view.data), 0)
         
         json_response = json.loads(r_view.data)
         assert_in("graph-key", json_response)
-        assert_equal(len(json_response["graph-key"]), 24)
+        assert_equal(len(json_response["graph-key"]), 40)
 
         graph_key = json_response["graph-key"]
         points_data = {
@@ -146,27 +152,29 @@ class FlaskTestClientProxy(unittest.TestCase):
             data=json.dumps(points_data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         json_response = json.loads(r_view.data)
         assert_in("point", json_response)
         assert_in("value", json_response["point"])
-        assert_in(7, json_response["point"]["value"])
+        assert_equal(7, json_response["point"]["value"])
+
+        self.graph_key_to_remove = graph_key
 
     def test_graph_point_push_json(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_point_push_json",
             "units": "ms"
         }
         r_view = self.local_http_client.post('/graph/',
             data=json.dumps(data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         assert_greater(len(r_view.data), 0)
         
         json_response = json.loads(r_view.data)
         assert_in("graph-key", json_response)
-        assert_equal(len(json_response["graph-key"]), 24)
+        assert_equal(len(json_response["graph-key"]), 40)
 
         graph_key = json_response["graph-key"]
         points_data = {
@@ -177,44 +185,83 @@ class FlaskTestClientProxy(unittest.TestCase):
             data=json.dumps(points_data),
             content_type='application/json'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         json_response = json.loads(r_view.data)
         assert_in("point", json_response)
         assert_in("value", json_response["point"])
-        assert_in(7, json_response["point"]["value"])
+        assert_equal(7, json_response["point"]["value"])
+
+        self.graph_key_to_remove = graph_key
+    
+    def test_graph_point_push_with_unixtimestamp_json(self):
+        data = {
+            "name": "test_graph_point_push_json",
+            "units": "ms"
+        }
+        r_view = self.local_http_client.post('/graph/',
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        assert_equal(r_view.status_code, 201)
+        assert_greater(len(r_view.data), 0)
+        
+        json_response = json.loads(r_view.data)
+        assert_in("graph-key", json_response)
+        assert_equal(len(json_response["graph-key"]), 40)
+
+        graph_key = json_response["graph-key"]
+        points_data = {
+            "value": 7,
+            "unixtimestamp": 1468861804
+        }
+        r_view = self.local_http_client.post('/graph/%s/' % graph_key,
+            data=json.dumps(points_data),
+            content_type='application/json'
+        )
+        assert_equal(r_view.status_code, 201)
+        json_response = json.loads(r_view.data)
+        assert_in("point", json_response)
+        assert_in("value", json_response["point"])
+        assert_equal(7, json_response["point"]["value"])
+        assert_equal('Mon, 18 Jul 2016 20:10:04 GMT', json_response["point"]["date"])
+
+        self.graph_key_to_remove = graph_key
 
     """
         Testing "x-www-form-urlencoded"
     """
     def test_graph_creation_x_www(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_creation_x_www",
             "units": "ms"
         }
         r_view = self.local_http_client.post('/graph/',
             data=data,
             content_type='application/x-www-form-urlencoded'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         assert_greater(len(r_view.data), 0)
         
         json_response = json.loads(r_view.data)
         assert_in("graph-key", json_response)
-        assert_equal(len(json_response["graph-key"]), 24)
+        assert_equal(len(json_response["graph-key"]), 40)
+        graph_key = json_response["graph-key"]
+
+        self.graph_key_to_remove = graph_key
 
     def test_graph_creation_incorrect_data_units_x_www(self):
         data = {
-            "name": "my test graph"
+            "name": "test_graph_creation_incorrect_data_units_x_www"
         }
         r_view = self.local_http_client.post('/graph/',
             data=data,
             content_type='application/x-www-form-urlencoded'
         )
-        assert_equals(r_view.status_code, 422)
+        assert_equal(r_view.status_code, 422)
         assert_greater(len(r_view.data), 0)
         json_response = json.loads(r_view.data)
         assert_in("error", json_response)
-        assert_equals(json_response["error"], 'units required')        
+        assert_equal(json_response["error"], 'units required')        
     
     def test_graph_creation_incorrect_data_name_x_www(self):
         data = {
@@ -224,27 +271,27 @@ class FlaskTestClientProxy(unittest.TestCase):
             data=data,
             content_type='application/x-www-form-urlencoded'
         )
-        assert_equals(r_view.status_code, 422)
+        assert_equal(r_view.status_code, 422)
         assert_greater(len(r_view.data), 0)
         json_response = json.loads(r_view.data)
         assert_in("error", json_response)
-        assert_equals(json_response["error"], 'name required')   
+        assert_equal(json_response["error"], 'name required')   
     
-    def test_graph_point_push(self):
+    def test_graph_point_push_x_www(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_point_push_x_www",
             "units": "ms"
         }
         r_view = self.local_http_client.post('/graph/',
             data=data,
             content_type='application/x-www-form-urlencoded'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         assert_greater(len(r_view.data), 0)
         
         json_response = json.loads(r_view.data)
         assert_in("graph-key", json_response)
-        assert_equal(len(json_response["graph-key"]), 24)
+        assert_equal(len(json_response["graph-key"]), 40)
 
         graph_key = json_response["graph-key"]
         points_data = {
@@ -254,28 +301,30 @@ class FlaskTestClientProxy(unittest.TestCase):
             data=points_data,
             content_type='application/x-www-form-urlencoded'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         json_response = json.loads(r_view.data)
         assert_in("point", json_response)
         assert_in("value", json_response["point"])
-        assert_in(7, json_response["point"]["value"])
+        assert_equal(7, json_response["point"]["value"])
+
+        self.graph_key_to_remove = graph_key
         
 
     def test_graph_point_push_x_www(self):
         data = {
-            "name": "my test graph",
+            "name": "test_graph_point_push_x_www",
             "units": "ms"
         }
         r_view = self.local_http_client.post('/graph/',
             data=data,
             content_type='application/x-www-form-urlencoded'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         assert_greater(len(r_view.data), 0)
         
         json_response = json.loads(r_view.data)
         assert_in("graph-key", json_response)
-        assert_equal(len(json_response["graph-key"]), 24)
+        assert_equal(len(json_response["graph-key"]), 40)
 
         graph_key = json_response["graph-key"]
         points_data = {
@@ -286,16 +335,53 @@ class FlaskTestClientProxy(unittest.TestCase):
             data=points_data,
             content_type='application/x-www-form-urlencodedjson'
         )
-        assert_equals(r_view.status_code, 201)
+        assert_equal(r_view.status_code, 201)
         json_response = json.loads(r_view.data)
         assert_in("point", json_response)
         assert_in("value", json_response["point"])
-        assert_in(7, json_response["point"]["value"])
+        assert_equal(7, json_response["point"]["value"])
+        
+        self.graph_key_to_remove = graph_key
 
+    def test_graph_point_push_with_unixtimestamp_x_www(self):
+        data = {
+            "name": "test_graph_point_push_json",
+            "units": "ms"
+        }
+        r_view = self.local_http_client.post('/graph/',
+            data=data,
+            content_type='application/x-www-form-urlencoded'
+        )
+        assert_equal(r_view.status_code, 201)
+        assert_greater(len(r_view.data), 0)
+        
+        json_response = json.loads(r_view.data)
+        assert_in("graph-key", json_response)
+        assert_equal(len(json_response["graph-key"]), 40)
 
+        graph_key = json_response["graph-key"]
+        points_data = {
+            "value": 7,
+            "unixtimestamp": 1468861804
+        }
+        r_view = self.local_http_client.post('/graph/%s/' % graph_key,
+            data=json.dumps(points_data),
+            content_type='application/json'
+        )
+        assert_equal(r_view.status_code, 201)
+        json_response = json.loads(r_view.data)
+        assert_in("point", json_response)
+        assert_in("value", json_response["point"])
+        assert_equal(7, json_response["point"]["value"])
+        assert_equal('Mon, 18 Jul 2016 20:10:04 GMT', json_response["point"]["date"])
 
-    # def tearDown(self):
-    #     pass
+        self.graph_key_to_remove = graph_key
+
+    def tearDown(self):
+        app.config['token_client'].document.remove(
+            collection=schemas.GRAPH_COLLECTION_ID,
+            identity=self.graph_key_to_remove
+        )
 
 if __name__ == '__main__':
     unittest.main()

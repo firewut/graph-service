@@ -1,18 +1,66 @@
+<!doctype html>
 <html>
-<head>
-    <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+        {% include 'semantic-ui.html' %}
+        {% include 'prism.html' %}
+        {% include 'highcharts.html' %}
 
-    <script type="text/javascript" src="http://code.highcharts.com/highcharts.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/4.2.5/themes/sand-signika.js"></script>
-
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css">
-
-    {% block head %}
-    {% endblock %}
-</head>
+        {% block head %}
+        {% endblock %}
+    </head>
 <body class="ui container">
     {% block content %}
     {% endblock %}
+    {% block footer %}
+        <div class="ui hidden divider"></div>
+        
+        <div class="ui grid">
+            <a href="https://deform.io" class="ui centered small image">
+                <img src="{{ url_for('send_static', path='Built_with@0,5x.png') }}"></img>
+            </a>
+        </div>
+        
+        <div class="ui hidden divider"></div>
+    {% endblock %}
+
+    <script type="text/javascript">
+        $('.menu .item')
+            .tab()
+        ;
+    </script>
+
+
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function (d, w, c) {
+            (w[c] = w[c] || []).push(function() {
+                try {
+                    w.yaCounter38535230 = new Ya.Metrika({
+                        id:38535230,
+                        clickmap:true,
+                        trackLinks:true,
+                        accurateTrackBounce:true,
+                        webvisor:true,
+                        trackHash:true
+                    });
+                } catch(e) { }
+            });
+
+            var n = d.getElementsByTagName("script")[0],
+                s = d.createElement("script"),
+                f = function () { n.parentNode.insertBefore(s, n); };
+            s.type = "text/javascript";
+            s.async = true;
+            s.src = "https://mc.yandex.ru/metrika/watch.js";
+
+            if (w.opera == "[object Opera]") {
+                d.addEventListener("DOMContentLoaded", f, false);
+            } else { f(); }
+        })(document, window, "yandex_metrika_callbacks");
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/38535230" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
 </body>
 </html>

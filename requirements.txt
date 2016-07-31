@@ -1,5 +1,7 @@
-flask==0.11.1
-python-deform==0.1.0
-python-dateutil==2.5.3
-nose==1.3.7
-gunicorn==19.6.0
+flask
+python-deform
+gunicorn
+raven[flask]
+nose
+pytz
+python-dateutil

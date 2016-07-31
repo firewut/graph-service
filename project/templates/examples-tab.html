@@ -1,0 +1,28 @@
+<h3 class="ui header">Create new graph with first point @current datetime</h3>
+<pre><code class="language-bash">curl -H "Content-Type: application/json" -d '{
+    "name": "Walking", 
+    "unit": "steps"
+}' https://{{ VIRTUAL_HOST }}/graph/
+
+curl -d value=10 -d unit=ms https://{{ VIRTUAL_HOST }}/graph/
+</code></pre>
+
+<div class="ui hidden divider"></div>
+<h3 class="ui header">Add new point with unixtimestamp @1468861804 to existing graph</h3>
+<pre><code class="language-bash">curl -H "Content-Type: application/json" -d '{
+    "value": "6",
+    "unixtimestamp": 1468861804
+}'  https://{{ VIRTUAL_HOST }}/graph/{{ EXAMPLE_GRAPH_DOC_ID }}/
+
+curl -d value=6 -d unixtimestamp=1468861804 https://{{ VIRTUAL_HOST }}/graph/{{ EXAMPLE_GRAPH_DOC_ID }}/
+</code></pre>
+
+<div class="ui hidden divider"></div>
+<h3 class="ui header">Graph your Ping</h3>
+<pre><code class="language-bash">ping -c 1 google.com
+# 64 bytes from 173.194.32.136: icmp_seq=0 ttl=58 time=4.184 ms
+ 
+ping -c 5 google.com | \
+    awk '{split($7,a,"="); if (length(a[2]) > 0){system("curl -d value="a[2]" https://{{ VIRTUAL_HOST }}/graph/{{ EXAMPLE_GRAPH_DOC_ID }}/")}}'
+</code></pre>
+
