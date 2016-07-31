@@ -21,10 +21,6 @@ requests.packages.urllib3.disable_warnings()
 host = os.getenv('IP', '0.0.0.0')  
 port = int(os.getenv('PORT', 8080))
 
-valRegex = r'^([0-9]+([,.][0-9]+)?)'
-
-
-EXAMPLE_GRAPH_ID='CUxHCtsjezgWDNIIuDbmDJHqosjxuQRqbokygpHG'
 START_TIME = datetime.datetime.utcnow()
 DATES=[
     START_TIME.strftime("%Y-%m-%dT%H:%M:%S.")+START_TIME.strftime("%f")[0:3]+"+00",
@@ -64,7 +60,7 @@ def index():
         'index.html', 
         DATES=DATES,
         VIRTUAL_HOST=os.getenv('VIRTUAL_HOST', "%s:%d" % (host, port)),
-        EXAMPLE_GRAPH_DOC_ID=os.getenv('EXAMPLE_GRAPH_DOC_ID', EXAMPLE_GRAPH_ID)
+        EXAMPLE_GRAPH_DOC_ID=os.getenv('EXAMPLE_GRAPH_DOC_ID', settings.EXAMPLE_GRAPH_ID)
     )
 
 @app.route("/graph/", methods=["POST"])

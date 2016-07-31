@@ -8,3 +8,4 @@ AVAILABLE_CONTENT_TYPES = [
 
 DEFORM_PROJECT_ID = os.getenv('DEFORM_PROJECT_ID', 'my-steam-graph')
 DEFORM_TOKEN = os.getenv('DEFORM_TOKEN', 'VWgIyzOsDDjqTGMG')
+EXAMPLE_GRAPH_ID='CUxHCtsjezgWDNIIuDbmDJHqosjxuQRqbokygpHG'
